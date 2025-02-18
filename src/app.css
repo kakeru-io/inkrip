@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    @apply bg-backgroundColor text-textColor font-en;
+}
+
+a {
+    @apply text-linkColor;
+}
+
+.text-color {
+    @apply text-color1;
+}
+
+.color1 {
+    @apply text-color1;
+}
+
+.color2 {
+    @apply text-color2;
+}
+
+.color3 {
+    @apply text-color3;
+}
+
+.en-font {
+    @apply font-en;
+}
+
+.jp-font {
+    @apply font-jp;
+}
