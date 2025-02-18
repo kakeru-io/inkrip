@@ -1,22 +1,33 @@
-# create-svelte
+# inkrip
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+**inkrip** is a web-based service that allows users to add recipient names to PDF receipts. Currently, it is optimized for Amazon invoices. This project is built entirely on the frontend using Svelte and Tailwind CSS, ensuring privacy and efficiency without requiring a backend.
 
-## Creating a project
+## 🚀 Features
+- Upload a PDF invoice (Amazon receipts supported)
+- Add a recipient name to the invoice
+- Download the modified PDF with the printed name
+- Fully client-side (no server processing required)
 
-If you're seeing this, you've probably already done this step. Congrats!
+## 🛠️ Tech Stack
+- [SvelteKit](https://kit.svelte.dev/) – Reactive frontend framework
+- [Tailwind CSS](https://tailwindcss.com/) – Utility-first styling
+- [PDF-lib](https://pdf-lib.js.org/) – PDF manipulation in JavaScript
+- [FileSaver.js](https://github.com/eligrey/FileSaver.js/) – Saving PDFs locally
+
+## 📦 Installation
+To set up the project locally, use the following commands:
 
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
+# Clone the repository
+git clone https://github.com/yourusername/inkrip.git
+cd inkrip
 
-# create a new project in my-app
-npm create svelte@latest my-app
+# Install dependencies
+npm install
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## 💻 Development
+Run the development server:
 
 ```bash
 npm run dev
@@ -25,14 +36,37 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
+## 📦 Building for Production
+To create a production build:
 
 ```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+Preview the production build:
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+```bash
+npm run preview
+```
+
+## ✨ How to Use
+1. Open the inkrip web application.
+2. Upload an Amazon PDF receipt.
+3. Enter the recipient’s name in the input field.
+4. Click "Generate" to embed the name in the PDF.
+5. Download the modified invoice.
+
+## 🔗 Deployment
+Since this is a frontend-only application, it can be deployed on any static hosting provider, such as:
+- [Vercel](https://vercel.com/)
+- [Netlify](https://www.netlify.com/)
+- [GitHub Pages](https://pages.github.com/)
+
+## 📜 License
+This project is licensed under the MIT License.
+
+## 🤝 Contributing
+Feel free to submit issues or pull requests to improve inkrip!
+
+## 📬 Contact
+For inquiries, reach out via GitHub issues or email: kakeru.kageshima@bootware.jp
