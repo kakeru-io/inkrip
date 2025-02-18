@@ -59,4 +59,7 @@
 
 	<!-- SMUI -->
 	<link rel="stylesheet" href="https://unpkg.com/svelte-material-ui/bare.css" />
+
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2641215286019570"
+					crossorigin="anonymous"></script>
 </svelte:head>
