@@ -2,7 +2,7 @@
 	import '../app.css';
 </script>
 
-<div class="max-w-[1440px] boxx">
+<div class="max-w-[1440px] mx-auto boxx">
 	<slot />
 </div>
 
@@ -20,7 +20,8 @@
 	<!-- キーワード (日英混在) -->
 	<meta
 		name="keywords"
-		content="Amazon receipt, name insertion, PDF editing, inkrip, Amazon領収書, 宛名, 領収書印字サービス"
+		content="Amazon receipt, name insertion, PDF
+		 editing, inkrip, Amazon領収書, 宛名, 領収書印字サービス"
 	/>
 
 	<!-- OGP英語/日本語混在 -->
@@ -65,3 +66,9 @@
 	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2641215286019570"
 					crossorigin="anonymous"></script>
 </svelte:head>
+
+<style global>
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+</style>
