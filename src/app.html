@@ -7,6 +7,24 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">%sveltekit.body%</div>
+	%sveltekit.body%
+
+	<script src="/pdfjs/pdf.mjs"></script>
+
+	<script>
+		// PDF.jsがロードされるまで待機し、workerSrcを設定
+		function setWorkerSrc() {
+			// グローバルオブジェクトが存在するかチェック
+			if (typeof window !== 'undefined' && typeof window.pdfjsLib !== 'undefined') {
+				// workerSrcを正しく設定
+				window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.mjs';
+				console.log("PDF.js worker path set successfully.");
+			} else {
+				// まだロードされていなければ、少し待って再試行
+				setTimeout(setWorkerSrc, 50);
+			}
+		}
+		setWorkerSrc();
+	</script>
 	</body>
 </html>

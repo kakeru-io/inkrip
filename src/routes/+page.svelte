@@ -1,115 +1,125 @@
 <script context="module">
-	// Disable SSR for compatibility
+	// SSRは無効化を維持
 	export const ssr = false;
 </script>
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { PDFDocument, StandardFonts } from 'pdf-lib';
+	import { PDFDocument } from 'pdf-lib'; // StandardFontsは日本語対応しないため削除
 	import saveAs from 'file-saver';
-	import fontkit from '@pdf-lib/fontkit';
+	import fontkit from '@pdf-lib/fontkit'; // 日本語フォント対応に必須
 
-	const fontPath = "/fonts/NotoSansJP-Regular.ttf";
+	// --- 設定 ---
+	const fontPath = '/fonts/NotoSansJP-Regular.ttf'; // static/fonts/NotoSansJP-Regular.ttf に配置されている想定
 
-	// Coordinates for the text field (Amazon receipt specific)
-	let fieldX = 663.9998474121094;
-	let fieldY = 94.90902709960938;
-	let fieldW = 150;
-	let fieldH = 40;
+	// --- 状態管理 ---
+	let isPdfLibLoaded = false;
+	let fontBytes: Uint8Array | null = null;
+	let isJapaneseFontReady = false;
 
-	// External field (name)
-	let address = ""; // Default empty
+	// --- データ ---
+	export let address = '株式会社bitboxx 御中';
+	let pdfBytes: Uint8Array | null = null;
 
-	// PDF file data
-	let pdfBytes = null;
+	// --- PDF-LIB 初期化関連 ---
 
-	// PDF.js (dynamically imported)
-	let pdfjsLib;
+	function initializePdfLib() {
+		isPdfLibLoaded = false;
+		isJapaneseFontReady = false;
 
-	// Scale used for coordinate calculations
-	let scale = 1.5;
+		// 1. 日本語フォントロードのPromise
+		const fontLoadPromise = fetch(fontPath)
+			.then(res => res.ok ? res.arrayBuffer() : Promise.reject(`Font Status: ${res.status}`))
+			.then(buffer => {
+				fontBytes = new Uint8Array(buffer);
+				isJapaneseFontReady = true; // 成功フラグを立てる
+				console.log('JP Font loaded successfully.');
+			})
+			.catch(err => {
+				console.error('Could not fetch NotoSansJP font. Japanese characters will not render:', err);
+				// 失敗しても Promise は解決する (処理をブロックしない)
+				return Promise.resolve();
+			})
+			.finally(() => {
+				// PDF-LIBの準備が整ったらボタンを有効化
+				isPdfLibLoaded = true;
+				console.log('PDF-LIB initialized. Print buttons enabled.');
+			});
+	}
 
-	// Dragging and editing states
-	let mode = "idle"; // 'idle' | 'editing' | 'dragging'
-	let isDragging = false;
-	let dragOffset = { x: 0, y: 0 };
-
-	// Optional Japanese font
-	let fontBytes = null;
-
-	// プレビュー更新用のキャンバス参照
-	let previewCanvas;
-
-	// On mount: load pdf.js & optional Japanese font
-	onMount(async () => {
-		const pdfjsModule = await import("pdfjs-dist");
-		pdfjsLib = pdfjsModule.default;
-
-		try {
-			const fontRes = await fetch(fontPath);
-			if (fontRes.ok) {
-				fontBytes = new Uint8Array(await fontRes.arrayBuffer());
-			} else {
-				console.warn("Could not fetch NotoSansJP font; fallback to WinAnsi");
-			}
-		} catch (err) {
-			console.warn("Font fetch error:", err);
-		}
+	onMount(() => {
+		initializePdfLib();
 	});
 
+
 	/**
-	 * Load PDF file
+	 * PDFファイル読み込み
 	 */
-	function handleFileUpload(e) {
+	async function handleFileUpload(e) {
 		const file = e.target.files[0];
 		if (!file) return;
 
+		if (!isPdfLibLoaded) {
+			alert('PDF処理ライブラリの準備ができていません。');
+			return;
+		}
+
 		const reader = new FileReader();
 		reader.onloadend = async () => {
-			pdfBytes = new Uint8Array(reader.result);
+			pdfBytes = new Uint8Array(reader.result as ArrayBuffer);
+			console.log('PDF file read complete. Byte length:', pdfBytes?.length);
 		};
 		reader.readAsArrayBuffer(file);
 	}
 
 	/**
-	 * Rendering PDF with the name inserted at the fixed coordinates
+	 * 宛名挿入後のPDFバイトデータを生成 (日本語フォント対応)
 	 */
-	async function rendering() {
+	async function getModifiedPdfBytes() {
+		if (!pdfBytes) throw new Error('PDFファイルが選択されていません。');
 
 		const pdfDoc = await PDFDocument.load(pdfBytes);
 		pdfDoc.registerFontkit(fontkit);
 
-		// Attempt to embed Japanese font if available
-		let customFont;
-		if (fontBytes) {
+		let measureFont;
+
+		// 1. 日本語フォントがロードに成功しているかチェック
+		if (fontBytes && isJapaneseFontReady) {
 			try {
-				customFont = await pdfDoc.embedFont(fontBytes);
+				measureFont = await pdfDoc.embedFont(fontBytes);
+				console.log('Using embedded Japanese Font.');
 			} catch (err) {
-				console.warn("Failed to embed JP font => fallback to Standard", err);
+				// フォント埋め込み失敗 (PDF-LIBエラー)
+				console.error('Failed to embed JP font:', err);
+				throw new Error('日本語フォントの埋め込み処理中にエラーが発生しました。');
 			}
+		} else {
+			// 日本語フォントのロードにそもそも失敗している場合
+			if (address.match(/[\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9faf]/)) {
+				// 日本語文字が含まれていると、Helveticaでは WinAnsi エラーになるため、停止させる
+				throw new Error('日本語フォントのロードに失敗しているため、日本語文字の印字はできません。');
+			}
+			// 日本語文字がない場合は、StandardFonts.Helveticaで続行
+			measureFont = await pdfDoc.embedFont('Helvetica');
+			console.warn('Using Helvetica Font. Japanese characters are not supported.');
 		}
-		const fallbackFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
 		const [page] = pdfDoc.getPages();
 		const pageHeight = page.getHeight();
+		const pageWidth = page.getWidth();
 
-		// Right-end anchored text
-		const fontSize = 8;
+		const fontSize = 10;
 		const text = address;
-		let measureFont = customFont || fallbackFont;
 
-		// Measure text width
-		let textWidth = 0;
-		try {
-			textWidth = measureFont.widthOfTextAtSize(text, fontSize);
-		} catch {
-			textWidth = text.length * (fontSize * 0.6);
-		}
+		// テキスト幅を計算
+		const textWidth = measureFont.widthOfTextAtSize(text, fontSize);
 
-		// Right edge => (fieldX/scale + fieldW/scale - textWidth)
-		const pdfX = (fieldX / scale) + (fieldW / scale) - textWidth;
-		// Bottom-based => (pageHeight - fieldY/scale - fieldH/scale)
-		const pdfY = pageHeight - (fieldY / scale) - (fieldH / scale);
+		// Amazon領収書を想定した固定印字位置 (右上の空白領域)
+		const paddingRight = 25;
+		const paddingTop = 60;
+
+		const pdfX = pageWidth - textWidth - paddingRight;
+		const pdfY = pageHeight - paddingTop;
 
 		page.drawText(text, {
 			x: pdfX,
@@ -118,166 +128,158 @@
 			font: measureFont
 		});
 
-		const outBytes = await pdfDoc.save();
-
-		return outBytes;
+		return await pdfDoc.save();
 	}
 
 	/**
-	 * Export PDF with the name inserted at the fixed coordinates
+	 * Export PDF
 	 */
 	async function exportPDF() {
 		if (!pdfBytes) {
-			alert("Please select a PDF file first.");
+			alert('PDFファイルをアップロードしてください。');
 			return;
 		}
 
-		const pdfName = address + "_receipt.pdf"
-
-		saveAs(new Blob([await rendering()], { type: "application/pdf" }), pdfName);
-	}
-
-	/**
-	 * Click on text field => toggles editing
-	 */
-	function onClickField(e) {
-		if (mode !== "dragging") {
-			mode = (mode === "editing") ? "idle" : "editing";
-			e.stopPropagation();
+		try {
+			const outBytes = await getModifiedPdfBytes();
+			const pdfName = address + '_receipt_inkrip.pdf';
+			saveAs(new Blob([outBytes], { type: 'application/pdf' }), pdfName);
+			alert('印字が完了しました。ダウンロードを始めます。');
+		} catch (e) {
+			console.error('PDF生成中にエラーが発生しました:', e);
+			alert('PDFの処理中にエラーが発生しました: ' + e.message);
 		}
 	}
 
-	/**
-	 * Click outside => if editing, return to idle
-	 */
-	function onClickOutside() {
-		if (mode === "editing") {
-			mode = "idle";
-		}
-	}
-
-	/**
-	 * Pointerdown => start drag (unless editing)
-	 */
-	function pointerDownField(e) {
-		if (mode === "editing") return;
-		isDragging = true;
-		mode = "dragging";
-		dragOffset.x = e.clientX - fieldX;
-		dragOffset.y = e.clientY - fieldY;
-		e.stopPropagation();
-	}
-
-	/**
-	 * Move => update field position
-	 */
-	function pointerMove(e) {
-		if (!isDragging) return;
-		fieldX = e.clientX - dragOffset.x;
-		fieldY = e.clientY - dragOffset.y;
-	}
-
-	/**
-	 * Pointerup => finalize drag
-	 */
-	function pointerUp() {
-		if (isDragging) {
-			isDragging = false;
-			mode = "idle";
-		}
-	}
 </script>
 
-<main
-	class="page-container flex flex-col min-h-screen bg-white text-black font-sans"
-	on:click={onClickOutside}
-	on:mousemove={pointerMove}
-	on:mouseup={pointerUp}
->
-	<!-- Header: inkrip (like a Tesla wide logo) -->
-	<header
-		class="bg-black text-white text-center p-8 text-2xl tracking-widest font-bold uppercase"
-		style="letter-spacing: 17px;"
-	>
-		inkrip
+<svelte:head>
+	<title>inkrip | 領収書PDFに、さくっと宛名を印字。</title>
+</svelte:head>
+
+<div class="min-h-screen flex flex-col">
+
+	<header class="container mx-auto px-4 py-4 flex justify-between items-center border-b">
+		<div class="text-xl font-bold text-gray-800">
+			inkrip | PDF領収書 宛名印字サービス
+		</div>
+		<a href="#footer-contact" class="text-sm text-gray-600 hover:text-gray-800">サポート</a>
 	</header>
 
-	<!-- Main Content -->
-	<div class="main-content flex-1 p-4 w-full max-w-screen-md mx-auto">
-		<!-- Explanation / Notice -->
-		<div class="desc-card bg-white border border-gray-300 p-4 mb-4 rounded">
-			<label class="block font-semibold mb-2">What is inkrip?</label>
-			<p>
-				This service (inkrip) currently works with <strong>Amazon receipts</strong> only.
-				It places your name at a specific position on the PDF.
+	<main class="flex-grow container mx-auto px-4 py-10">
+		<div class="max-w-3xl mx-auto text-center mb-10">
+			<h1 class="text-3xl font-extrabold text-gray-900 mb-4">
+				領収書PDFに、さくっと宛名を印字。
+			</h1>
+			<p class="text-lg text-red-600 font-bold mb-2">
+				⚠️ 現在は、**Amazonの定型領収書**への印字のみ動作確認しています。
 			</p>
-			<p class="mt-2">
-				<strong>Steps to use:</strong><br/>
-				1. Select your Amazon receipt PDF.<br/>
-				2. Enter your name below.<br/>
-				3. Click <em>Export PDF</em> to download the modified file.
+			<p class="text-gray-600 mb-6">
+				**【今後対応予定】** 楽天、その他の汎用PDF領収書にも順次対応予定です。
 			</p>
+			<div class="inline-block bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">
+				**完全無料**でご利用いただけます。
+			</div>
 		</div>
 
-		<!-- PDF File -->
-		<div class="form-card bg-white border border-gray-300 p-4 mb-4 rounded">
-			<label class="block font-semibold mb-2">PDF File (Amazon Receipt)</label>
-			<input
-				type="file"
-				class="w-full p-2 border border-gray-400 rounded"
-				accept="application/pdf"
-				on:change={handleFileUpload}
-			/>
+		<div class="text-center mb-8">
+			<div class="text-xs text-gray-400">[AdSense 広告枠 1: ディスプレイ広告 (高)]</div>
 		</div>
 
-		<!-- Name Field -->
-		<div class="form-card bg-white border border-gray-300 p-4 mb-4 rounded">
-			<label class="block font-semibold mb-2">Recipient Name</label>
-			<input
-				type="text"
-				bind:value={address}
-				placeholder="inkrip"
-				class="w-full p-2 border border-gray-400 rounded"
-			/>
+		<div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
+			<div class="space-y-6">
+
+				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+					<h2 class="text-xl font-bold mb-4 text-gray-800">1. 領収書PDFをアップロード</h2>
+
+					<label for="pdf-upload" class="flex items-center space-x-3 cursor-pointer">
+						<input
+							type="file"
+							id="pdf-upload"
+							accept="application/pdf"
+							on:change={handleFileUpload}
+							disabled={!isPdfLibLoaded}
+							class="hidden"
+						/>
+						<span
+							class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 ease-in-out disabled:bg-gray-400">
+                ファイルを選択
+              </span>
+						<span class="text-gray-600">
+                {pdfBytes ? `選択されています (${pdfBytes.length} bytes)` : '選択されていません'}
+              </span>
+					</label>
+					<p class="text-xs text-gray-500 mt-2">
+						※ PDFファイルのみ対応しています。
+					</p>
+				</div>
+
+				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+					<h2 class="text-xl font-bold mb-4 text-gray-800">2. 宛名を入力</h2>
+					<input
+						type="text"
+						bind:value={address}
+						placeholder="株式会社○○ 御中"
+						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					/>
+					<p class="text-xs text-gray-500 mt-2">
+						{#if isJapaneseFontReady}
+							※ 日本語を含め、入力された宛名がAmazon領収書の右上に印字されます。
+						{:else}
+							<span
+								class="text-red-500 font-bold">警告: 日本語フォントのロードに失敗しました。日本語文字の印字はできません。</span>
+						{/if}
+					</p>
+				</div>
+
+				<div class="text-center">
+					<div class="text-xs text-gray-400">[AdSense 広告枠 3: インフィード広告 (レクタングル)]</div>
+				</div>
+
+				<div class="text-center">
+					<div class="text-xs text-gray-400">[AdSense 広告枠 4: ネイティブ広告 (小型)]</div>
+				</div>
+
+				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+					<h2 class="text-xl font-bold mb-4 text-gray-800">3. ダウンロード</h2>
+					<button
+						on:click={exportPDF}
+						disabled={!pdfBytes || !isPdfLibLoaded}
+						class="w-full px-4 py-3 bg-gray-800 text-white font-bold text-lg rounded-lg shadow-xl hover:bg-gray-700 transition duration-150 ease-in-out disabled:bg-gray-400"
+					>
+						PDFを印字・ダウンロード
+					</button>
+					<p class="text-xs text-gray-500 mt-2">
+						※ 処理はデバイス上で行われるため、PDFファイルが外部に送信されることはありません。
+					</p>
+				</div>
+
+			</div>
+
+			<div class="space-y-6">
+
+				<div
+					class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
+					<div class="text-xs text-gray-400">[AdSense 広告枠 2: ディスプレイ広告 (大型)]</div>
+				</div>
+
+				<div
+					class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
+					<div class="text-xs text-gray-400">[AdSense 広告枠 5: ディスプレイ広告 (中型)]</div>
+				</div>
+
+				<div class="p-4 text-sm text-gray-500">
+					現在、プレビュー機能は停止中です。印字位置はAmazon領収書の右上に固定されます。
+				</div>
+			</div>
+
 		</div>
 
-		<!-- PDFプレビュー領域 -->
-<!--		<div class="preview-container border border-gray-400 mb-4">-->
-<!--			<canvas bind:this={previewCanvas} class="w-full" style="height: 300px;"></canvas>-->
-<!--		</div>-->
+	</main>
 
-		<!-- Export Button -->
-		<button
-			class="btn bg-black text-white px-4 py-2 rounded font-semibold mt-2 hover:bg-gray-900"
-			on:click={exportPDF}
-		>
-			Export PDF
-		</button>
-	</div>
-
-	<!-- Footer -->
-	<footer class="bg-gray-100 text-gray-700 text-center p-3">
-		<p class="text-sm">&copy; 2025 inkrip</p>
+	<footer id="footer-contact" class="bg-gray-100 text-gray-700 text-center p-6 border-t border-gray-200">
+		<p class="text-sm">&copy; 2025 inkrip | <a href="#footer-contact" class="underline">特定商取引法に基づく表記</a></p>
 	</footer>
-</main>
 
-<!--
-  もしドラッグ＆ドロップでフィールド位置を動かしたい場合は、
-  下記のように absolute な要素を Tailwind で定義する例。
-
-  <div
-    class="absolute border-2 border-red-500 bg-transparent text-black flex justify-end items-center pr-1 text-sm"
-    style="left: {fieldX}px; top: {fieldY}px; width: {fieldW}px; height: {fieldH}px;"
-    on:pointerdown={pointerDownField}
-    on:click={onClickField}
-  >
-    {#if mode === "editing"}
-      <textarea
-        class="w-full h-full border-none outline-none bg-transparent resize-none text-right"
-        bind:value={address}
-      />
-    {:else}
-      {address}
-    {/if}
-  </div>
--->
+</div>
