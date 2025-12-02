@@ -163,7 +163,7 @@
 		<div class="text-xl font-bold text-gray-800">
 			inkrip | PDF領収書 宛名印字サービス
 		</div>
-		<a href="#footer-contact" class="text-sm text-gray-600 hover:text-gray-800">サポート</a>
+<!--		<a href="#footer-contact" class="text-sm text-gray-600 hover:text-gray-800">サポート</a>-->
 	</header>
 
 	<main class="flex-grow container mx-auto px-4 py-10">
