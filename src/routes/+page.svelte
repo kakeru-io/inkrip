@@ -18,7 +18,7 @@
 	let isJapaneseFontReady = false;
 
 	// --- データ ---
-	export let address = '株式会社bitboxx 御中';
+	export let address = '株式会社○○ 御中';
 	let pdfBytes: Uint8Array | null = null;
 
 	// --- PDF-LIB 初期化関連 ---
