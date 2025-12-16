@@ -106,20 +106,23 @@
 
 		const [page] = pdfDoc.getPages();
 		const pageHeight = page.getHeight();
-		const pageWidth = page.getWidth();
 
-		const fontSize = 10;
+		const fontSize = 8;
 		const text = address;
+
+		let scale = 1.5;
+		let fieldX = 663.9998474121094;
+		let fieldY = 94.90902709960938;
+		let fieldW = 150;
+		let fieldH = 40;
 
 		// テキスト幅を計算
 		const textWidth = measureFont.widthOfTextAtSize(text, fontSize);
 
-		// Amazon領収書を想定した固定印字位置 (右上の空白領域)
-		const paddingRight = 25;
-		const paddingTop = 60;
-
-		const pdfX = pageWidth - textWidth - paddingRight;
-		const pdfY = pageHeight - paddingTop;
+		// Right edge => (fieldX/scale + fieldW/scale - textWidth)
+		const pdfX = (fieldX / scale) + (fieldW / scale) - textWidth;
+		// Bottom-based => (pageHeight - fieldY/scale - fieldH/scale)
+		const pdfY = pageHeight - (fieldY / scale) - (fieldH / scale);
 
 		page.drawText(text, {
 			x: pdfX,
