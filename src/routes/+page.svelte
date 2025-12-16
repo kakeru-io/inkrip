@@ -154,135 +154,196 @@
 		}
 	}
 
+	/* ---------------------------
+   お問い合わせフォーム
+--------------------------- */
+	let contactName = '';
+	let contactEmail = '';
+	let contactMessage = '';
+
+	/* メール生成（mailto） */
+	$: mailtoLink = `mailto:bitboxx.inc@gmail.com?subject=${encodeURIComponent(
+		'宛名一括印字・自動印字の相談'
+	)}&body=${encodeURIComponent(
+		`【お名前】
+${contactName}
+
+【メールアドレス】
+${contactEmail}
+
+【お問い合わせ内容】
+${contactMessage}
+`)}`;
 </script>
 
 <svelte:head>
 	<title>inkrip | 領収書PDFに、さくっと宛名を印字。</title>
 </svelte:head>
 
-<div class="min-h-screen flex flex-col">
+<div class="max-w-3xl mx-auto text-center mb-10">
+	<h1 class="text-3xl font-extrabold text-gray-900 mb-4">
+		領収書PDFに、さくっと宛名を印字。
+	</h1>
+	<p class="text-lg text-red-600 font-bold mb-2">
+		⚠️ 現在は、**Amazonの定型領収書**への印字のみ動作確認しています。
+	</p>
+	<p class="text-gray-600 mb-6">
+		**【今後対応予定】** 楽天、その他の汎用PDF領収書にも順次対応予定です。
+	</p>
+	<div class="inline-block bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">
+		**完全無料**でご利用いただけます。
+	</div>
+</div>
 
-	<header class="container mx-auto px-4 py-4 flex justify-between items-center border-b">
-		<div class="text-xl font-bold text-gray-800">
-			inkrip | PDF領収書 宛名印字サービス
-		</div>
-<!--		<a href="#footer-contact" class="text-sm text-gray-600 hover:text-gray-800">サポート</a>-->
-	</header>
+<div class="text-center mb-8">
+	<div class="text-xs text-gray-400">[AdSense 広告枠 1: ディスプレイ広告 (高)]</div>
+</div>
 
-	<main class="flex-grow container mx-auto px-4 py-10">
-		<div class="max-w-3xl mx-auto text-center mb-10">
-			<h1 class="text-3xl font-extrabold text-gray-900 mb-4">
-				領収書PDFに、さくっと宛名を印字。
-			</h1>
-			<p class="text-lg text-red-600 font-bold mb-2">
-				⚠️ 現在は、**Amazonの定型領収書**への印字のみ動作確認しています。
-			</p>
-			<p class="text-gray-600 mb-6">
-				**【今後対応予定】** 楽天、その他の汎用PDF領収書にも順次対応予定です。
-			</p>
-			<div class="inline-block bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">
-				**完全無料**でご利用いただけます。
-			</div>
-		</div>
+<div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
 
-		<div class="text-center mb-8">
-			<div class="text-xs text-gray-400">[AdSense 広告枠 1: ディスプレイ広告 (高)]</div>
-		</div>
+	<div class="space-y-6">
 
-		<div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+		<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+			<h2 class="text-xl font-bold mb-4 text-gray-800">1. 領収書PDFをアップロード</h2>
 
-			<div class="space-y-6">
-
-				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
-					<h2 class="text-xl font-bold mb-4 text-gray-800">1. 領収書PDFをアップロード</h2>
-
-					<label for="pdf-upload" class="flex items-center space-x-3 cursor-pointer">
-						<input
-							type="file"
-							id="pdf-upload"
-							accept="application/pdf"
-							on:change={handleFileUpload}
-							disabled={!isPdfLibLoaded}
-							class="hidden"
-						/>
-						<span
-							class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 ease-in-out disabled:bg-gray-400">
+			<label for="pdf-upload" class="flex items-center space-x-3 cursor-pointer">
+				<input
+					type="file"
+					id="pdf-upload"
+					accept="application/pdf"
+					on:change={handleFileUpload}
+					disabled={!isPdfLibLoaded}
+					class="hidden"
+				/>
+				<span
+					class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 ease-in-out disabled:bg-gray-400">
                 ファイルを選択
               </span>
-						<span class="text-gray-600">
+				<span class="text-gray-600">
                 {pdfBytes ? `選択されています (${pdfBytes.length} bytes)` : '選択されていません'}
               </span>
-					</label>
-					<p class="text-xs text-gray-500 mt-2">
-						※ PDFファイルのみ対応しています。
-					</p>
-				</div>
-
-				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
-					<h2 class="text-xl font-bold mb-4 text-gray-800">2. 宛名を入力</h2>
-					<input
-						type="text"
-						bind:value={address}
-						placeholder="株式会社○○ 御中"
-						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					/>
-					<p class="text-xs text-gray-500 mt-2">
-						{#if isJapaneseFontReady}
-							※ 日本語を含め、入力された宛名がAmazon領収書の右上に印字されます。
-						{:else}
-							<span
-								class="text-red-500 font-bold">警告: 日本語フォントのロードに失敗しました。日本語文字の印字はできません。</span>
-						{/if}
-					</p>
-				</div>
-
-				<div class="text-center">
-					<div class="text-xs text-gray-400">[AdSense 広告枠 3: インフィード広告 (レクタングル)]</div>
-				</div>
-
-				<div class="text-center">
-					<div class="text-xs text-gray-400">[AdSense 広告枠 4: ネイティブ広告 (小型)]</div>
-				</div>
-
-				<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
-					<h2 class="text-xl font-bold mb-4 text-gray-800">3. ダウンロード</h2>
-					<button
-						on:click={exportPDF}
-						disabled={!pdfBytes || !isPdfLibLoaded}
-						class="w-full px-4 py-3 bg-gray-800 text-white font-bold text-lg rounded-lg shadow-xl hover:bg-gray-700 transition duration-150 ease-in-out disabled:bg-gray-400"
-					>
-						PDFを印字・ダウンロード
-					</button>
-					<p class="text-xs text-gray-500 mt-2">
-						※ 処理はデバイス上で行われるため、PDFファイルが外部に送信されることはありません。
-					</p>
-				</div>
-
-			</div>
-
-			<div class="space-y-6">
-
-				<div
-					class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
-					<div class="text-xs text-gray-400">[AdSense 広告枠 2: ディスプレイ広告 (大型)]</div>
-				</div>
-
-				<div
-					class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
-					<div class="text-xs text-gray-400">[AdSense 広告枠 5: ディスプレイ広告 (中型)]</div>
-				</div>
-
-				<div class="p-4 text-sm text-gray-500">
-					現在、プレビュー機能は停止中です。印字位置はAmazon領収書の右上に固定されます。
-				</div>
-			</div>
-
+			</label>
+			<p class="text-xs text-gray-500 mt-2">
+				※ PDFファイルのみ対応しています。
+			</p>
 		</div>
 
-	</main>
+		<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+			<h2 class="text-xl font-bold mb-4 text-gray-800">2. 宛名を入力</h2>
+			<input
+				type="text"
+				bind:value={address}
+				placeholder="株式会社○○ 御中"
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+			/>
+			<p class="text-xs text-gray-500 mt-2">
+				{#if isJapaneseFontReady}
+					※ 日本語を含め、入力された宛名がAmazon領収書の右上に印字されます。
+				{:else}
+							<span
+								class="text-red-500 font-bold">警告: 日本語フォントのロードに失敗しました。日本語文字の印字はできません。</span>
+				{/if}
+			</p>
+		</div>
 
-	<footer id="footer-contact" class="bg-gray-100 text-gray-700 text-center p-6 border-t border-gray-200">
-		<p class="text-sm">&copy; 2025 inkrip | <a href="#footer-contact" class="underline">特定商取引法に基づく表記</a></p>
-	</footer>
+		<div class="text-center">
+			<div class="text-xs text-gray-400">[AdSense 広告枠 3: インフィード広告 (レクタングル)]</div>
+		</div>
+
+		<div class="text-center">
+			<div class="text-xs text-gray-400">[AdSense 広告枠 4: ネイティブ広告 (小型)]</div>
+		</div>
+
+		<div class="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+			<h2 class="text-xl font-bold mb-4 text-gray-800">3. ダウンロード</h2>
+			<button
+				on:click={exportPDF}
+				disabled={!pdfBytes || !isPdfLibLoaded}
+				class="w-full px-4 py-3 bg-gray-800 text-white font-bold text-lg rounded-lg shadow-xl hover:bg-gray-700 transition duration-150 ease-in-out disabled:bg-gray-400"
+			>
+				PDFを印字・ダウンロード
+			</button>
+			<p class="text-xs text-gray-500 mt-2">
+				※ 処理はデバイス上で行われるため、PDFファイルが外部に送信されることはありません。
+			</p>
+		</div>
+
+	</div>
+
+	<div class="space-y-6">
+
+		<div
+			class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
+			<div class="text-xs text-gray-400">[AdSense 広告枠 2: ディスプレイ広告 (大型)]</div>
+		</div>
+
+		<div
+			class="text-center h-48 bg-gray-100 flex items-center justify-center border border-gray-300 rounded-lg shadow-md">
+			<div class="text-xs text-gray-400">[AdSense 広告枠 5: ディスプレイ広告 (中型)]</div>
+		</div>
+
+		<div class="p-4 text-sm text-gray-500">
+			現在、プレビュー機能は停止中です。印字位置はAmazon領収書の右上に固定されます。
+		</div>
+	</div>
 
 </div>
+
+<!-- ========================================================= -->
+<!-- お問い合わせフォーム（メール起動型） -->
+<!-- ========================================================= -->
+<section class="max-w-3xl mx-auto mt-20 mb-24 p-8 bg-white border border-gray-300 rounded-lg shadow-lg">
+	<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">
+		一括印字・自動印字のご相談はこちら
+	</h2>
+
+	<p class="text-gray-600 text-center mb-8">
+		一括印字・自動化などの API 化、業務向けカスタマイズ等をご希望の場合、以下のフォームからお問い合わせください。
+	</p>
+
+	<div class="space-y-6">
+
+		<!-- 名前 -->
+		<div>
+			<label class="block text-gray-700 font-semibold mb-1">お名前</label>
+			<input
+				type="text"
+				bind:value={contactName}
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+				placeholder="例：山田太郎"
+			/>
+		</div>
+
+		<!-- メールアドレス -->
+		<div>
+			<label class="block text-gray-700 font-semibold mb-1">メールアドレス</label>
+			<input
+				type="email"
+				bind:value={contactEmail}
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+				placeholder="your@example.com"
+			/>
+		</div>
+
+		<!-- お問い合わせ内容 -->
+		<div>
+			<label class="block text-gray-700 font-semibold mb-1">お問い合わせ内容</label>
+			<textarea
+				bind:value={contactMessage}
+				rows="5"
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+				placeholder="どのようなご相談でしょうか？（例：月100件の自動印字をしたい など）"
+			></textarea>
+		</div>
+
+		<!-- メーラー起動ボタン -->
+		<div class="text-center mt-6">
+			<a
+				href={mailtoLink}
+				class="inline-block px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow hover:bg-indigo-700 transition"
+			>
+				メールを送信する（メーラーが開きます）
+			</a>
+		</div>
+	</div>
+</section>

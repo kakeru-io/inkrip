@@ -2,10 +2,6 @@
 	import '../app.css';
 </script>
 
-<div class="max-w-[1440px] mx-auto boxx">
-	<slot />
-</div>
-
 <svelte:head>
 
 	<!-- タイトルは英語ベース -->
@@ -66,6 +62,32 @@
 	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2641215286019570"
 					crossorigin="anonymous"></script>
 </svelte:head>
+
+<div class="max-w-[1440px] mx-auto boxx border-x">
+	<div class="min-h-screen flex flex-col">
+
+		<header class="container mx-auto px-4 py-4 flex justify-between items-center border-b">
+			<div class="text-xl font-bold text-gray-800">
+				<a href="/">inkrip | PDF領収書 宛名印字サービス</a>
+			</div>
+			<!--		<a href="#footer-contact" class="text-sm text-gray-600 hover:text-gray-800">サポート</a>-->
+		</header>
+
+		<main class="flex-grow container mx-auto px-4 py-10">
+			<slot />
+		</main>
+
+		<footer id="footer-contact" class="bg-gray-100 text-gray-700 text-center p-6 border-t border-gray-200">
+			<a href="/legal" class="underline">特定商取引法に基づく表記</a> | <a href="/terms" class="underline">利用規約</a> |
+			<a href="/privacy" class="underline">プライバシーポリシー</a>
+			<p class="text-sm mt-4">
+				&copy; 2025 inkrip by bitboxx
+			</p>
+		</footer>
+
+	</div>
+</div>
+
 
 <style global>
     @tailwind base;
