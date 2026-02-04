@@ -79,6 +79,8 @@
 		</nav>
 	</header>
 
+	<div id="mechanism"></div>
+
 	<main class="main">
 		<slot />
 	</main>
