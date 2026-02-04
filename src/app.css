@@ -239,6 +239,7 @@ a {
 	align-items: baseline;
 	justify-content: space-between;
 	gap: 8px;
+	flex-wrap: wrap;
 }
 
 .preview-left {
@@ -254,10 +255,20 @@ a {
 	gap: 8px;
 }
 
+.preview-actions-row {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 12px;
+}
+
 .panel-note {
 	margin: -4px 0 10px;
 	font-size: 0.85rem;
 	color: #777777;
+}
+
+.page-badge {
+	margin-left: auto;
 }
 
 .label {
@@ -511,5 +522,80 @@ a {
 
 	.footer {
 		flex-direction: column;
+	}
+}
+
+@media (max-width: 720px) {
+	.shell {
+		padding: 14px 12px 48px;
+	}
+
+	.header {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.header-actions {
+		margin-left: auto;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		width: auto;
+		gap: 8px;
+	}
+
+	.main {
+		padding: 14px 2px;
+	}
+
+	.panel {
+		padding: 14px;
+	}
+
+	.panel-header,
+	.preview-left {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.page-nav {
+		justify-content: flex-start;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.page-indicator .input {
+		width: 60px;
+	}
+
+	.preview-actions {
+		width: 100%;
+	}
+
+	.preview-actions .btn {
+		width: 100%;
+	}
+
+	.preview-actions-row {
+		justify-content: stretch;
+	}
+
+	.preview-actions-row .btn {
+		width: 100%;
+	}
+
+	.stamp-row {
+		gap: 10px;
+	}
+
+	.stamp-controls {
+		grid-template-columns: 1fr;
+		grid-column: 1 / -1;
+	}
+
+	.dropzone-name {
+		white-space: normal;
+		word-break: break-word;
 	}
 }

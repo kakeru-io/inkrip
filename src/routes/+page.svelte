@@ -543,11 +543,6 @@
 							</button>
 						</div>
 					</div>
-					<div class="preview-actions">
-						<button on:click={exportPDF} disabled={!pdfBytes || !isReady} class="btn">
-							{$locale ? $t('ui.export') : 'PDF を書き出す'}
-						</button>
-					</div>
 				</div>
 				<div
 					class="preview"
@@ -595,6 +590,11 @@
 					{:else}
 						{$locale ? $t('ui.jpFontNg') : '日本語フォントを読み込めませんでした。'}
 					{/if}
+				</div>
+				<div class="preview-actions-row">
+					<button on:click={exportPDF} disabled={!pdfBytes || !isReady} class="btn">
+						{$locale ? $t('ui.export') : 'PDF を書き出す'}
+					</button>
 				</div>
 			</div>
 		</div>
